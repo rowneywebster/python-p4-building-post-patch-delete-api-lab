@@ -45,5 +45,55 @@ def most_expensive_baked_good():
     most_expensive_serialized = most_expensive.to_dict()
     return make_response( most_expensive_serialized,   200  )
 
+
+
+# ---------------- POST ROUTE ----------------
+@app.route('/baked_goods', methods=['POST'])
+def create_baked_good():
+    name = request.form.get("name")
+    price = request.form.get("price")
+    bakery_id = request.form.get("bakery_id")
+
+    if not name or not price or not bakery_id:
+        return make_response({"error": "Missing required fields"}, 400)
+
+    try:
+        baked_good = BakedGood(name=name, price=float(price), bakery_id=int(bakery_id))
+        db.session.add(baked_good)
+        db.session.commit()
+        return make_response(baked_good.to_dict(), 201)
+    except Exception as e:
+        return make_response({"error": str(e)}, 400)
+
+
+# ---------------- PATCH ROUTE ----------------
+@app.route('/bakeries/<int:id>', methods=['PATCH'])
+def update_bakery(id):
+    bakery = Bakery.query.filter_by(id=id).first()
+    if not bakery:
+        return make_response({"error": "Bakery not found"}, 404)
+
+    name = request.form.get("name")
+    if name:
+        bakery.name = name
+        db.session.commit()
+
+    return make_response(bakery.to_dict(), 200)
+
+
+# ---------------- DELETE ROUTE ----------------
+@app.route('/baked_goods/<int:id>', methods=['DELETE'])
+def delete_baked_good(id):
+    baked_good = BakedGood.query.filter_by(id=id).first()
+    if not baked_good:
+        return make_response({"error": "Baked good not found"}, 404)
+
+    db.session.delete(baked_good)
+    db.session.commit()
+
+    return make_response({"message": f"Baked good with id {id} deleted successfully"}, 200)
+
+
+
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
